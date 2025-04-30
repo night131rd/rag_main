@@ -5,26 +5,26 @@ import getpass
 import os
 
 
-os.environ["GOOGLE_API_KEY"] = "AIzaSyBJTnxj4hj6-6HlrgLeUpiCQqADk2BEkbQ"
+os.environ["GOOGLE_API_KEY"] = "AIzaSyCW48u86C518XxX2jD8YWw1kFcdGtblHNc"
 if "GOOGLE_API_KEY" not in os.environ:
-    os.environ["GOOGLE_API_KEY"] = getpass.getpass("AIzaSyBJTnxj4hj6-6HlrgLeUpiCQqADk2BEkbQ")
-from langchain_google_genai import ChatGoogleGenerativeAI
+    os.environ["GOOGLE_API_KEY"] = getpass.getpass(
+        "AIzaSyCW48u86C518XxX2jD8YWw1kFcdGtblHNc"
+    )
 
 llm = ChatGoogleGenerativeAI(
     model="gemini-2.0-flash-001",
-    temperature=0.5,
+    temperature=0,
     max_tokens=None,
     timeout=None,
     max_retries=2,
 )
 
 
-
-
 def main():
-    return 
+    return
 
-system_prompt =""""Anda adalah asisten pencarian akademik ahli yang menggunakan alur pemikiran terstruktur (chain of thought). Ikuti langkah-langkah berikut untuk input pengguna:
+
+system_prompt = """"Anda adalah asisten pencarian akademik ahli yang menggunakan alur pemikiran terstruktur (chain of thought). Ikuti langkah-langkah berikut untuk input pengguna:
 
 Langkah 1: Analisis Topik
 - Identifikasi 1-2 topik utama dari paragraf  
@@ -78,22 +78,23 @@ prompt = ChatPromptTemplate.from_messages(
 )
 chain = prompt | llm
 
+
 def llm_querry(querry):
-    answer= chain.invoke(
-    {
-        "system_prompt": system_prompt,
-        "input": querry,
-    }
+    answer = chain.invoke(
+        {
+            "system_prompt": system_prompt,
+            "input": querry,
+        }
     )
     print(answer.content)
     return answer.content
-    
 
 
-system_prompt_answer = f"""
+system_prompt_answer = """
 INSTRUKSI WAJIB - ATURAN SITASI AKADEMIK
 
 Anda adalah seorang dosen peneliti yang sedang menulis paper akademik dengan standar tinggi.
+"
 
 
 ============= VALIDASI SITASI =============
@@ -133,25 +134,27 @@ prompt_context = ChatPromptTemplate.from_messages(
     [
         (
             "system",
-            "You are a helpful assistant  {system_prompt_answer} and use this reference for asnwer {context}.",
+            "  {system_prompt_answer} dan gunakan referensi ini sebagai jawaban, saya ulangi lagi hanya gunakan referensi dibawah ini, jangan membuat jawaban yang tidak bersumber dari referensi yang saya berikan {context}.",
         ),
         ("human", "{input}"),
     ]
 )
 chain_answer = prompt_context | llm
+
+
 def answer(pencarian):
     context = querry(pencarian)
     if context is not None:
         content = chain_answer.invoke(
             {
-                "system_prompt_answer":system_prompt_answer,
-                "context":context,
-                "input":pencarian,
+                "system_prompt_answer": system_prompt_answer,
+                "context": context,
+                "input": pencarian,
             }
         )
 
-  
-    print("JAWABAN BERDASARKAN JURNAL    " ,content.content)
-   
+    print("JAWABAN BERDASARKAN JURNAL    ", content.content)
+
+
 if __name__ == "__main__":
     answer("Rokok")
