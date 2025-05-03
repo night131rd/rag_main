@@ -1,18 +1,21 @@
 from chroma import querry
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_core.prompts import ChatPromptTemplate
 import getpass
 import os
-
-
-os.environ["GOOGLE_API_KEY"] = "AIzaSyBJTnxj4hj6-6HlrgLeUpiCQqADk2BEkbQ"
-if "GOOGLE_API_KEY" not in os.environ:
-    os.environ["GOOGLE_API_KEY"] = getpass.getpass("AIzaSyBJTnxj4hj6-6HlrgLeUpiCQqADk2BEkbQ")
 from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_core.prompts import ChatPromptTemplate
+from pydantic import BaseModel,Field
+
+os.environ["GOOGLE_API_KEY"] = "AIzaSyCW48u86C518XxX2jD8YWw1kFcdGtblHNc"
+if "GOOGLE_API_KEY" not in os.environ:
+    os.environ["GOOGLE_API_KEY"] = getpass.getpass(
+        "AIzaSyCW48u86C518XxX2jD8YWw1kFcdGtblHNc"
+    )
+
+
 
 llm = ChatGoogleGenerativeAI(
     model="gemini-2.0-flash-001",
-    temperature=0.5,
+    temperature=2,
     max_tokens=None,
     timeout=None,
     max_retries=2,
@@ -21,62 +24,51 @@ llm = ChatGoogleGenerativeAI(
 
 
 
+
 def main():
     return 
 
-system_prompt =""""Anda adalah asisten pencarian akademik ahli yang menggunakan alur pemikiran terstruktur (chain of thought). Ikuti langkah-langkah berikut untuk input pengguna:
+system_prompt ="""
+You are a professional content analyzer, and your primary role is to identify and extract the most relevant keywords from a given article. Your goal is to focus on the main ideas, themes, and key phrases that best represent the input.
 
-Langkah 1: Analisis Topik
-- Identifikasi 1-2 topik utama dari paragraf  
-- Contoh: "Dampak rokok dan upaya regulasi"
-Langkah 2: Ekstraksi Kata Kunci 
-- Daftarkan kata/frasa kunci (prioritaskan istilah ilmiah/medis)  
-- Contoh: ["rokok", "kesehatan", "nikotin", "regulasi"]
+I will send a text .
 
-Langkah 3: Formulasi Query
-- Gabungkan 1-3 kata kunci terkuat menjadi query  
-- Jika output hanya 1 kata kunci, tambahkan kata kunci yang relevan
-- Contoh: "rokok  kesehatan regulasi"
+Please follow these steps:
 
-Format Output Wajib:
+1. Carefully read the  text to understand its core topics and main ideas.
 
-hasil query dari Langkah 
+2. Extract relevant keywords or key phrases that accurately reflect the key concepts discussed. Focus on terms that someone might use to search for this type of content online.
 
-Aturan Tambahan:
-1. Abaikan tahun/lokasi/keterangan spesifik  
-2. Gunakan akronim umum ( 
-3. Fokus pada konsep yang dapat dicari di database akademik
-4. Pastikan output dalam bahasa yang sama dengan input pengguna
+3. If the text is too short add synonym or relevant topics for better search
 
-Contoh Input-Output:
+4. Avoid common stop words like "the", "and", or "with". Also, avoid overly generic terms unless they are critical to the topic.
 
-Input: "Rokok adalah produk yang terbuat dari tembakau yang digulung atau dipadatkan dalam kertas, biasanya digunakan dengan cara dibakar dan dihisap asapnya.
-Rokok mengandung berbagai zat kimia berbahaya, termasuk nikotin, tar, dan karbon monoksida, yang dapat menyebabkan berbagai masalah kesehatan serius, seperti penyakit jantung,
-kanker paru-paru, stroke, dan gangguan pernapasan.Selain berdampak buruk bagi perokok aktif, asap rokok juga berbahaya bagi perokok pasif 
-(orang yang menghirup asap rokok dari lingkungan sekitar). Oleh karena itu, banyak negara telah menerapkan regulasi ketat terkait rokok, termasuk larangan merokok di tempat umum,
-pembatasan iklan rokok, dan kampanye kesehatan untuk mengurangi konsumsi rokok."  
-Output: rokok  kesehatan regulasi
-Input: "Padi di Indonesia"
-Output: Padi Indonesia
-Input: "Factors Affecting Rice Grain Size and Weight"
-Output: Rice Grain Size Weight
-Input: "The Impact of Climate Change on Coral Reefs"
-Output: Climate Change Coral Reefs
+5. Prioritize phrases over single words where it makes sense, especially if the phrase better captures a core idea (e.g., "artificial intelligence" instead of just "intelligence").
 
-Berikan output  yang sesuai dengan aturan di atas.
-hasil query dari Langkah 3
-HANYA QUERY YANG PERLU ANDA BERIKAN!!!
+6. Make sure the output language is the same as the input
+
+7. Make sure the output in one sentence maximal 3 words
+
+
+
+
+Your goal is to deliver a keywords in one sentece that captures the essence of the text in a way that would be useful for JournalArticle query or content categorization.
+
 """
+
+
+
 prompt = ChatPromptTemplate.from_messages(
     [
         (
             "system",
-            "You are a helpful assistant {system_prompt} .",
+            " {system_prompt} .",
         ),
         ("human", "{input}"),
     ]
 )
 chain = prompt | llm
+
 
 def llm_querry(querry):
     answer= chain.invoke(
@@ -87,43 +79,71 @@ def llm_querry(querry):
     )
     print(answer.content)
     return answer.content
+
     
+example = """
+Contoh 1:
+Exposure to secondhand smoke significantly impacts children under 5 years old, increasing their risk of severe respiratory infections. 
+Studies show a strong correlation between parental smoking and the occurrence of severe pneumonia in children under 5 (Stefani & Setiawan, 2021). 
+Infants aged 0-1 are particularly vulnerable, with smoke exposure interfering with respiratory tract development and increasing the risk of bronchopneumonia (Palaguna, 2023). 
+Despite awareness of smoking's consequences, many parents continue the habit, exposing their children to harmful substances like nicotine and carbon monoxide (Ramdani et al., 2019). 
+Research indicates that parental knowledge about the dangers of secondhand smoke is often insufficient, with 66 percent of parents having only moderate understanding of how it can trigger acute respiratory infections in children aged 0-5 (Zara, 2021). 
+These findings emphasize the need for increased education and awareness about the risks of secondhand smoke exposure to young children.
+
+Contoh 2:
+Nitrogen is a crucial nutrient for plant growth and development, playing a vital role in protein, DNA, and RNA synthesis (Sari & Prayudyaningsih, 2015).
+While abundant in the atmosphere, plants cannot directly utilize atmospheric nitrogen. 
+Rhizobium bacteria can fix atmospheric nitrogen through symbiosis with legumes, converting it into plant-available forms (Meitasari & Wicaksono, 2018).
+Proper nitrogen management is essential, as excess can lead to increased susceptibility to pests and diseases, while deficiency results in stunted growth and yellowing leaves (Erythrina, 2016).
+The Leaf Color Chart is an effective tool for optimizing nitrogen application in rice cultivation. 
+For crops like kailan, appropriate nitrogen dosage and plant density can significantly improve growth and yield (Pramitasari et al., 2016).
+In soybean cultivation, a combination of Rhizobium inoculation and balanced nitrogen fertilization can enhance various growth parameters and yield components (Dwi, 2018).
+
+Contoh 3:
+Klorofil adalah pigmen hijau yang berperan penting dalam fotosintesis, ditemukan dalam membran tilakoid dan kloroplas (Juandaet al., 2020). 
+ungsi utamanya meliputi pemanfaatan energi matahari, fiksasi CO2, dan penyediaan energi bagi ekosistem (Aulia Juanda Djs et al., 2020).
+Klorofil memiliki manfaat sebagai antioksidan, antiinflamasi, antimutagenik, dan antikanker (Anies Chamidah et al., 2024). 
+Kandungan klorofil dapat digunakan sebagai indikator kesehatan tanaman, dengan tanaman sehat memiliki jumlah klorofil lebih besar (Sukmono et al., 2012). 
+Klorofil dapat diisolasi dari berbagai sumber, termasuk mikroalga dan daun tanaman seperti singkong ( Winasih, 2020). 
+Pengembangan klorofil sebagai pewarna makanan alami menghadapi tantangan stabilitas warna terhadap pH, oksidasi, dan pemanasan (Rachmawati, 2020). 
+Estimasi kandungan klorofil dapat dilakukan menggunakan algoritma khusus dengan data airborne hyperspectral (Abdi et al., 2012).
 
 
-system_prompt_answer = f"""
-INSTRUKSI WAJIB - ATURAN SITASI AKADEMIK
-
-Anda adalah seorang dosen peneliti yang sedang menulis paper akademik dengan standar tinggi.
-
-
-============= VALIDASI SITASI =============
-Untuk SETIAP sitasi yang Anda gunakan:
-1. Ekstrak tahun dari sitasi (misalnya: dari "(Ahmad, 2020)" ekstrak "2020")
-3. Jika YA: sitasi VALID dan BOLEH digunakan
-4. Jika TIDAK: sitasi TIDAK VALID dan DILARANG digunakan!
-=======================================
 
 
 
-GAYA PENULISAN:
-- Tulis seperti dosen peneliti yang sedang menulis paper ilmiah
-- Gunakan bahasa akademik yang formal dan presisi
-- Sajikan informasi dengan logis dan terstruktur
-
-FORMAT OUTPUT:
-1. Satu paragraf akademik (5-8 kalimat)
-2. Minimal 4 sitasi dengan format (Nama, Tahun) 
 
 
-CONTOH OUTPUT:
-Rokok adalah produk olahan tembakau yang dikemas dalam bentuk silinder dari kertas dengan campuran cengkeh dan bahan tambahan lainnya yang diproduksi
-oleh pabrik maupun dibuat sendiri, yang digunakan dengan cara dibakar pada salah satu ujungnya dan dibiarkan membara agar asapnya dapat dihirup melalui
-mulut pada ujung lainnya. Kandungan berbahaya dalam rokok meliputi lebih dari 7.000 bahan kimia, termasuk nikotin yang bersifat adiktif, tar yang dapat
-menyebabkan kanker, dan karbon monoksida yang mengganggu sistem peredaran darah (Samsuri et al., 2023). Dampak kesehatan yang ditimbulkan oleh rokok tidak hanya mempengaruhi 
-perokok aktif tetapi juga perokok pasif yang terpapar asap rokok di lingkungannya. Konsumsi rokok merupakan salah satu penyebab utama kematian yang dapat
-dicegah di seluruh dunia, dengan estimasi lebih dari 8 juta kematian setiap tahunnya (Kholis, 2024). Berbagai penelitian ilmiahtelah membuktikan bahwa
-merokok secara signifikan meningkatkan risiko berbagai penyakit serius seperti kanker paru-paru, penyakit jantung koroner, stroke, dan penyakit
-paru obstruktif kronik (PPOK)..
+"""
+
+citation_rules = f"""
+1. Dilarang melakukan kutipan pada kalimat yang juga hasil mengutip.
+    Contoh:  Dampak rokok pada anak dibawah umur adalah buruk(Penulis,Tahun).
+    Hal ini karena kutipan format APA 7 melarang hal tersebut
+2. Cara menulis kutipan:
+    Menggunakan nama akhir penulis.
+    Nama: Ahmad Budi
+    Tahun: 2021
+    Contoh dua Penulis: 
+    Kutipan: Teks kutipan(Budi,2021)
+    Contoh satu Penulis:
+    Kutipan: Teks kutipan( Budi dan Ilyas,Tahun)
+    Contoh penulis lebih dari dua:
+    Kutipan: Teks kutipan(Tegar et al., Tahun)
+3. Pada satu referensi hanya boleh mengutip dari satu jurnal, jangan mengutip jurnal hingga dua kali
+4. Tidak boleh mengarang, hana lakukan kutipan berdasarkan referensi teks yang diberikan
+
+Contoh Kutipan Benar:
+Beberapa jenis kacang yang populer antara lain kacang tanah (*Arachis hypogaea*), kacang kedelai (*Glycine max*), kacang hijau (*Vigna radiata*) (Ilyas dan Hakim, 2021)
+
+Contoh Kutipan Salah:
+Menurut Ilyas dan Hakim Beberapa jenis kacang yang populer antara lain kacang tanah (*Arachis hypogaea*), kacang kedelai (*Glycine max*), kacang hijau (*Vigna radiata*).
+"""
+
+writing_rules="""
+1. Buatlah paragraft berdasarkan input pengguna
+2. Paragraft harus berisi minimal 5 dan maksimal 6 kalimat yang menjawab, menjelaskan, dan mengembangkan input
+3. Paragraft harus berisi minimal 2 kutipan dari referensi, dan tidak ada duplikat kutipan.
 
 
 
@@ -133,20 +153,46 @@ prompt_context = ChatPromptTemplate.from_messages(
     [
         (
             "system",
-            "You are a helpful assistant  {system_prompt_answer} and use this reference for asnwer {context}.",
+            """Kamu adalah Profesor penulis jurnal ilmiah dengan format APA7,\n
+            Jawab input ini {input}\n
+            Ini adalah referensi untuk menjawab pertanyaan:\n {context}\n
+            Jika referensi tidak cukup untuk menjawab pertanyaan cukup katakan informasi yang diperlukan tidak cukup.\n
+            Jangan mengarang jawaban yang tidak berasal dari referensi. Aku ulangi, jangan membuat kalimat yang tidak berdasarkan pada referensi.
+            Tugasmu adalah \n {writing_rules} \n  ,Panduan kutipan adalah \n {citation_rules} \n
+            Contoh jawaban yang benar adalah seperti ini:\n
+            {example}
+            ."""
         ),
-        ("human", "{input}"),
+        ("human", 
+         """Tolong ikuti intruksi ini saat menjawab input.
+            1. Baca dan pahami input
+            2. Liat contoh jawaban yang benar
+            3. Pahami aturan kepenulisan dan cara mengutip
+            4. Hasilkan paragraft seperti intruksi 
+         """),
     ]
 )
+
+llm = ChatGoogleGenerativeAI(
+    model="gemini-2.0-flash-001",
+    temperature =0,
+    max_tokens=None,
+    timeout=None,
+    max_retries=2,
+)
+
 chain_answer = prompt_context | llm
 def answer(pencarian):
     context = querry(pencarian)
     if context is not None:
+        print(context)
         content = chain_answer.invoke(
             {
-                "system_prompt_answer":system_prompt_answer,
+                "writing_rules":writing_rules,
+                "citation_rules":citation_rules,
                 "context":context,
                 "input":pencarian,
+                "example":example,
             }
         )
 
@@ -154,4 +200,5 @@ def answer(pencarian):
     print("JAWABAN BERDASARKAN JURNAL    " ,content.content)
    
 if __name__ == "__main__":
-    answer("Rokok")
+    #llm_querry("jelaskan pengertian nitrogen untuk tanaman")
+    answer("Jelaskan cara budidaya pisang")

@@ -18,8 +18,7 @@ count = 0
 count_lock = asyncio.Lock()
 stop_event = asyncio.Event()
 asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
-semaphore = asyncio.Semaphore(5)
-                                    
+
 
 
 list_database={
@@ -34,23 +33,26 @@ def open_alex(querry,year):
 
 def search_works(querry,year):
         w= Works().search(querry).filter(publication_year=f"{year}-",is_oa= True).get()
-        print(f"MENDAPATKAN {len(w)} PDF")
+        print(f"MENDAPATKAN TOTAL {len(w)} PDF")
         asyncio.run(handle_pdf(w))
         return w    
     
 async def handle_pdf(w):
+     semaphore = asyncio.Semaphore(len(w))
      global count
      tasks = []
-     connector = aiohttp.TCPConnector(limit_per_host=20, ttl_dns_cache=300, )
-     async with aiohttp.ClientSession(connector=connector) as session:
+     time_out = aiohttp.ClientTimeout(total = 15)
+     connector = aiohttp.TCPConnector(limit_per_host=5, ttl_dns_cache=300,ssl=False)
+     async with aiohttp.ClientSession(connector=connector, timeout=time_out) as session:
         for paper in w:
-            if count >= 5 or any(paper == p for p in w[-1]):
+            if count >= 4 or any(paper == p for p in w[-1]):
                 break
             if str(paper.get('title','Unknown')).lower() in list_database:
-                print(F"JURNAL KE {count} DENGAN JUDUL {paper.get('title','Unknown').lower()} SUDAH ADA DI DATABASE")
+                count +=1
+                print(F"JURNAL DENGAN JUDUL {paper.get('title','Unknown').lower()} SUDAH ADA DI DATABASE")
                 continue
             if paper.get('primary_location').get('pdf_url'):
-                tasks.append(extract_text(paper,paper.get('primary_location').get('pdf_url'),session))
+                tasks.append(extract_text(paper,paper.get('primary_location').get('pdf_url'),session,semaphore))
         await asyncio.gather(*tasks)
 
 def parse_pdf(content):
@@ -61,18 +63,18 @@ def parse_pdf(content):
 
 
       
-async def extract_text(paper,pdf_url, session):
+async def extract_text(paper,pdf_url, session,semaphore):            
                 async with semaphore:
                     try:
-                        time_out = aiohttp.ClientTimeout(total = 10)
-                        async with session.get(pdf_url, time_out,ssl = False) as response:
+                        async with session.get(pdf_url,ssl =False) as response:
                                     content_type = response.headers.get("Content-Type","")
+                                    print(response.status)
                                     if "pdf"  not in content_type:
                                         return
                                     if response.status == 200:
                                         async with count_lock:
                                             global count
-                                            if count >= 5 :
+                                            if count >= 4 :
                                                 stop_event.set()
                                                 return
                                             count += 1
@@ -86,13 +88,15 @@ async def extract_text(paper,pdf_url, session):
                                             paper["publication_year"],
                                             ", ".join(a["author"]["display_name"] for a in paper["authorships"]),
                                             paper["primary_location"]["pdf_url"]) 
-                                       
+                    except asyncio.TimeoutError:
+                          print(f" TIME OUT ERROR ")
+                                                         
                     except Exception as e:
                         print(f"Error Happened {e}")
 
 
 if __name__== "__main__":
-        main()
+        open_alex("Defisiensi nitrogen",2021)
     
 
 

@@ -7,7 +7,7 @@ import json
 emb_fn = embedding_functions.DefaultEmbeddingFunction()
 client = chromadb.PersistentClient(path="/home/nightbird/PROGRAMING/rag_langchain/rag_main/data")
 
-list_jurnal = client.get_collection(name="jurnal_list", embedding_function=emb_fn)
+list_jurnal = client.get_or_create_collection(name="jurnal_tes_v2", embedding_function=emb_fn)
 
 def main():
     stores_data()
@@ -32,9 +32,11 @@ def stores_data(doc,title,year,author,url):
     )
 
 def querry(pencarian):
+    from text_handling import clean_pdf_text
+    
     result = list_jurnal.query(
     query_texts=pencarian,
-    n_results=4,
+    n_results=50,
     include=["documents","metadatas","distances"],
     where={
         "year":{
@@ -43,7 +45,25 @@ def querry(pencarian):
     }
     )
 
-    return result.get("documents","metadatas")
+    text = ""
+    seen_journals = []
+
+    # Ambil dokumen dan metadata secara berpasangan
+    documents = result.get('documents')[0]  # Get the first list of documents
+    metadatas = result.get('metadatas')[0]  # Get the first list of metadatas
+    
+    for doc, metadata in zip(documents, metadatas):
+        print(len(seen_journals))
+        if len(seen_journals) == 3:
+            return text
+            
+        if metadata['title'] not in seen_journals:
+            doc = clean_pdf_text(doc)
+            text += f"\nJUDUL: {metadata['title']}\n"
+            text += f"TAHUN: {metadata['year']}\n"
+            text += f"PENULIS: {metadata['author']}\n"
+            text += f"TEXT:\n{doc}\n"
+            seen_journals.append(metadata['title'])
 
 if __name__ == "__main__":
-    querry("Nitrogen")
+    querry("Budidaya pisang")

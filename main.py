@@ -1,15 +1,17 @@
 from openalex import open_alex
 from llm import llm_querry, answer
-import json
+
 
 while True:
-    pencarian = input("Masukkan querry . . .")
+    input_user = input("Masukkan querry . . .")
     tahun = input ("Masukkan tahun maksimal . . .")
     print("Memulai pencarian")
-    pencarian = llm_querry(pencarian)
-    open_alex(pencarian,tahun)
+    list_pencarian = llm_querry(input_user)
+    open_alex(list_pencarian,tahun)
     print("Memulai memuat jawaban")
-    answer(pencarian)
+    answer(input_user,list_pencarian)
+
+
 
 
 
