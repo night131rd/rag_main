@@ -9,7 +9,7 @@ while True:
     list_pencarian = llm_querry(input_user)
     open_alex(list_pencarian,tahun)
     print("Memulai memuat jawaban")
-    answer(input_user,list_pencarian)
+    answer(input_user)
 
 
 

@@ -5,8 +5,6 @@ import ftfy
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from chroma import stores_data 
 from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_community.document_loaders import PyMuPDFLoader
-from concurrent.futures import ThreadPoolExecutor
 
 
 embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-mpnet-base-v2")
@@ -40,14 +38,13 @@ def clean_pdf_text(text):
 def split_text(text):
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=1000,
-        chunk_overlap=200,
+        chunk_overlap=300,
         add_start_index=True,
     )
     all_split=text_splitter.split_text(text)
     return all_split
 
 def split_store(text,title,year,author,url):
-    ("PRINT MEMULAI MELAKUKAN SPLIT")
     texts = clean_pdf_text(text)
     docs = split_text(texts)
     print("BERHASIL MELAKUKAN SPLIT")

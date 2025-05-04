@@ -8,7 +8,7 @@ from pydantic import BaseModel,Field
 os.environ["GOOGLE_API_KEY"] = "AIzaSyCW48u86C518XxX2jD8YWw1kFcdGtblHNc"
 if "GOOGLE_API_KEY" not in os.environ:
     os.environ["GOOGLE_API_KEY"] = getpass.getpass(
-        "AIzaSyCW48u86C518XxX2jD8YWw1kFcdGtblHNc"
+        "AIzaSyAXCkXcahKwW6S4OlsiuEcJQhZ1-k5dWyE"
     )
 
 
@@ -154,13 +154,16 @@ prompt_context = ChatPromptTemplate.from_messages(
         (
             "system",
             """Kamu adalah Profesor penulis jurnal ilmiah dengan format APA7,\n
-            Jawab input ini {input}\n
-            Ini adalah referensi untuk menjawab pertanyaan:\n {context}\n
+            Jawab input ini <input>\n{input}\n <input>
+            Ini adalah referensi untuk menjawab pertanyaan:<referensi>\n {context}\n<referensi>
             Jika referensi tidak cukup untuk menjawab pertanyaan cukup katakan informasi yang diperlukan tidak cukup.\n
             Jangan mengarang jawaban yang tidak berasal dari referensi. Aku ulangi, jangan membuat kalimat yang tidak berdasarkan pada referensi.
-            Tugasmu adalah \n {writing_rules} \n  ,Panduan kutipan adalah \n {citation_rules} \n
-            Contoh jawaban yang benar adalah seperti ini:\n
-            {example}
+            Tugasmu adalah menulis dengan <writing_rules> \n {writing_rules} \n <writing_rules>.
+            Panduan kutipan adalah <citation_rules> \n {citation_rules} \n <citation_rules>
+            Contoh jawaban yang benar adalah seperti ini:
+            <example>
+            \n{example}
+            <example>
             ."""
         ),
         ("human", 
@@ -184,6 +187,7 @@ llm = ChatGoogleGenerativeAI(
 chain_answer = prompt_context | llm
 def answer(pencarian):
     context = querry(pencarian)
+    print(context)
     if context is not None:
         print(context)
         content = chain_answer.invoke(
@@ -195,10 +199,8 @@ def answer(pencarian):
                 "example":example,
             }
         )
-
-  
-    print("JAWABAN BERDASARKAN JURNAL    " ,content.content)
+        print("JAWABAN BERDASARKAN JURNAL    " ,content.content)
    
 if __name__ == "__main__":
     #llm_querry("jelaskan pengertian nitrogen untuk tanaman")
-    answer("Jelaskan cara budidaya pisang")
+    answer("Defisiensi Nitrogen")
